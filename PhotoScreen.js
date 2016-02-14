@@ -14,7 +14,7 @@ var getImageSource = require('./getImageSource');
 var PhotoScreen = React.createClass({
   render: function() {
     return (
-      <ScrollView contentContainerStyle={styles.contentContainer}>
+      <ScrollView>
         <View >
           {/* $FlowIssue #7363964 - There's a bug in Flow where you cannot
             * omit a property or set it to undefined if it's inside a shape,
@@ -22,9 +22,7 @@ var PhotoScreen = React.createClass({
           <Image
             source={getImageSource(this.props.photo)}
             style={styles.detailsImage}/>
-          <View style={styles.rightPane}>
-            <Text style={styles.PhotoTitle}>{this.props.photo.title}</Text>
-          </View>
+          <Text style={styles.PhotoTitle}>{this.props.photo.title}</Text>
         </View>
         <View style={styles.separator} />
       </ScrollView>
@@ -33,25 +31,27 @@ var PhotoScreen = React.createClass({
 });
 
 var styles = StyleSheet.create({
-  contentContainer: {
-    padding: 10,
-  },
   rightPane: {
     justifyContent: 'space-between',
     flex: 1,
   },
   PhotoTitle: {
     flex: 1,
-    fontSize: 16,
+    marginLeft: 10,
+    fontSize: 30,
+    alignItems: 'center',
     fontWeight: '500',
   },
   mainSection: {
     flexDirection: 'row',
   },
   detailsImage: {
+    flex: 1,
     width: 400,
-    height: 700,
-    margin: 10,
+    height: 425,
+    marginRight: 10,
+    marginLeft: 10,
+    alignItems: 'center',
     backgroundColor: '#eaeaea',
   },
   separator: {
