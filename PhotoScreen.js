@@ -38,7 +38,7 @@ var styles = StyleSheet.create({
   PhotoTitle: {
     flex: 1,
     marginLeft: 10,
-    fontSize: 30,
+    fontSize: 20,
     alignItems: 'center',
     fontWeight: '500',
   },
@@ -47,7 +47,7 @@ var styles = StyleSheet.create({
   },
   detailsImage: {
     flex: 1,
-    width: 400,
+    width: 300,
     height: 425,
     marginRight: 10,
     marginLeft: 10,

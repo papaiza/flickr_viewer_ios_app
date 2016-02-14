@@ -21,19 +21,14 @@ var PhotoCell = React.createClass({
       TouchableElement = TouchableNativeFeedback;
     }
     return (
-      <View>
+      <View style={styles.container}>
         <TouchableElement
           onPress={this.props.onSelect}
           onShowUnderlay={this.props.onHighlight}
           onHideUnderlay={this.props.onUnhighlight}>
-          <View style={styles.row}>
-            {/* $FlowIssue #7363964 - There's a bug in Flow where you cannot
-              * omit a property or set it to undefined if it's inside a shape,
-              * even if it isn't required */}
-            <Image
-              source={getImageSource(this.props.photo)}
-              style={styles.cellImage}/>
-          </View>
+          <Image
+            source={getImageSource(this.props.photo)}
+            style={styles.cellImage}/>
         </TouchableElement>
       </View>
     );
@@ -41,24 +36,20 @@ var PhotoCell = React.createClass({
 });
 
 var styles = StyleSheet.create({
-  textContainer: {
-    flex: 1,
-  },
-  photoTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 2,
+  container: {
+    flexDirection:'row',
   },
   row: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap'
   },
   cellImage: {
     backgroundColor: '#dddddd',
-    height: 300,
-    margin: 3,
-    width: 200,
+    height: 200,
+    margin: 5,
+    width: 150,
+    flex: 1,
   },
   cellBorder: {
     backgroundColor: 'rgba(0, 0, 0, 0.1)',
