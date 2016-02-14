@@ -15,7 +15,7 @@ var PhotoScreen = React.createClass({
   render: function() {
     return (
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.mainSection}>
+        <View >
           {/* $FlowIssue #7363964 - There's a bug in Flow where you cannot
             * omit a property or set it to undefined if it's inside a shape,
             * even if it isn't required */}
@@ -49,10 +49,10 @@ var styles = StyleSheet.create({
     flexDirection: 'row',
   },
   detailsImage: {
-    width: 134,
-    height: 200,
+    width: 400,
+    height: 700,
+    margin: 10,
     backgroundColor: '#eaeaea',
-    marginRight: 10,
   },
   separator: {
     backgroundColor: 'rgba(0, 0, 0, 0.1)',

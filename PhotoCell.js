@@ -15,7 +15,7 @@ var getImageSource = require('./getImageSource');
 
 var PhotoCell = React.createClass({
   render: function() {
-    var title = this.props.photo.ratings.critics_score;
+    var title = this.props.photo.title;
     var TouchableElement = TouchableHighlight;
     if (Platform.OS === 'android') {
       TouchableElement = TouchableNativeFeedback;
@@ -33,11 +33,6 @@ var PhotoCell = React.createClass({
             <Image
               source={getImageSource(this.props.photo)}
               style={styles.cellImage}/>
-            <View style={styles.textContainer}>
-              <Text style={styles.photoTitle} numberOfLines={2}>
-                {this.props.photo.title}
-              </Text>
-            </View>
           </View>
         </TouchableElement>
       </View>
@@ -56,16 +51,14 @@ var styles = StyleSheet.create({
     marginBottom: 2,
   },
   row: {
-    alignItems: 'center',
-    backgroundColor: 'white',
     flexDirection: 'row',
-    padding: 5,
+    flexWrap: 'wrap'
   },
   cellImage: {
     backgroundColor: '#dddddd',
-    height: 93,
-    marginRight: 10,
-    width: 60,
+    height: 300,
+    margin: 3,
+    width: 200,
   },
   cellBorder: {
     backgroundColor: 'rgba(0, 0, 0, 0.1)',

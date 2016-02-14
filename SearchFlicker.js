@@ -1,34 +1,30 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- */
 'use strict';
+
 var React = require('react-native');
 var {
-  ActivityIndicatorIOS,
+  Image,
   ListView,
   Platform,
-  ProgressBarAndroid,
   StyleSheet,
   Text,
   View,
+  AlertIOS,
 } = React;
 
-
 var TimerMixin = require('react-timer-mixin');
-
-var invariant = require('invariant');
 var dismissKeyboard = require('dismissKeyboard');
+var invariant = require('invariant');
+
 
 var PhotoCell = require('./PhotoCell');
 var PhotoScreen = require('./PhotoScreen');
 
 var SearchBar = require('./SearchBar');
 
-var API_KEY = '266838cd5e79077a5532bb666585e0b2'; //fa0e40936949d292
+var API_KEY = '266838cd5e79077a5532bb666585e0b2'; 
 
 var API_URL = 
-'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&privacy_filter=1&safe_search=1'
+'https://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&privacy_filter=1&safe_search=1&nojsoncallback=1';
 
 var LOADING = {};
 
@@ -51,22 +47,25 @@ var SearchFlicker = React.createClass({
         rowHasChanged: (row1, row2) => row1 !== row2,
       }),
       filter: '',
+      loaded: false,
       queryNumber: 0,
     };
   },
+
   componentDidMount: function() {
-    this.searchPhotos('');
+    this.fetchData('');
   },
   _urlForQueryAndPage: function(query: string, pageNumber: number): string {
+    var apiKey = API_KEY;
     if (query) {
-      //var PAGE_SIZE = 20;
-      var PARAMS = '&api_key=' + "a0167f062357d4dbc99e452427ab9bfb" +  '&tags=';
+      var PAGE_SIZE = 30;
+      var PARAMS = '&api_key=' + apiKey +  '&text=';
       return (
         API_URL + PARAMS + encodeURIComponent(query) + '&page=' + pageNumber
       );
     } 
   },
-  searchPhotos: function(query: string) {
+  fetchData: function(query: string) {
     this.timeoutID = null;
 
     this.setState({filter: query});
@@ -91,23 +90,14 @@ var SearchFlicker = React.createClass({
       isLoadingTail: false,
     });
 
-    fetch(this._urlForQueryAndPage(query, 1))
+    fetch(this._urlForQueryAndPage(query, 1), {method: "GET"})
       .then((response) => response.json())
-      .catch((error) => {
-        LOADING[query] = false;
-        resultsCache.dataForQuery[query] = undefined;
-
-        this.setState({
-          dataSource: this.getDataSource([]),
-          isLoading: false,
-        });
-      })
       .then((responseData) => {
         LOADING[query] = false;
-        //resultsCache.totalForQuery[query] = responseData.photos.total;
-        resultsCache.dataForQuery[query] = responseData.photos;
+        resultsCache.totalForQuery[query] = responseData.photos.total;
+        resultsCache.dataForQuery[query] = responseData.photos.photo;
         resultsCache.nextPageNumberForQuery[query] = 2;
-
+        
         if (this.state.filter !== query) {
           // do not update state if the query is stale
           return;
@@ -115,7 +105,16 @@ var SearchFlicker = React.createClass({
 
         this.setState({
           isLoading: false,
-          dataSource: this.getDataSource(responseData[photos]),
+          dataSource: this.state.dataSource.cloneWithRows(responseData.photos.photo),
+        });
+      })
+      .catch((error) => {
+        LOADING[query] = false;
+        resultsCache.dataForQuery[query] = undefined;
+
+        this.setState({
+          dataSource: this.getDataSource([]),
+          isLoading: false,
         });
       })
       .done();
@@ -130,16 +129,8 @@ var SearchFlicker = React.createClass({
       resultsCache.dataForQuery[query].length
     );
   },
-  hasMore: function(): boolean {
-    var query = this.state.filter;
-    if (!resultsCache.dataForQuery[query]) {
-      return true;
-    }
-    return (
-      resultsCache.totalForQuery[query] !==
-      resultsCache.dataForQuery[query].length
-    );
-  },onEndReached: function() {
+
+  onEndReached: function() {
     var query = this.state.filter;
     if (!this.hasMore() || this.state.isLoadingTail) {
       // We're already fetching or have all the elements so noop
@@ -172,7 +163,7 @@ var SearchFlicker = React.createClass({
 
         LOADING[query] = false;
         // We reached the end of the list before the expected number of results
-        if (!responseData.photos) {
+        if (!responseData.photos.photo) {
           resultsCache.totalForQuery[query] = photosForQuery.length;
         } else {
           for (var i in responseData.photos) {
@@ -197,6 +188,12 @@ var SearchFlicker = React.createClass({
   getDataSource: function(photos: Array<any>): ListView.DataSource {
     return this.state.dataSource.cloneWithRows(photos);
   },
+  onSearchChange: function(event: Object){
+    var filter = event.nativeEvent.text.toLowerCase();
+
+    this.clearTimeout(this.timeoutID);
+    this.timeoutID = this.setTimeout(() => this.fetchData(filter), 100);
+  },
   selectPhoto: function(photo: Object) {
     if (Platform.OS === 'ios') {
       this.props.navigator.push({
@@ -213,26 +210,6 @@ var SearchFlicker = React.createClass({
       });
     }
   },
-  onSearchChange: function(event: Object) {
-    var filter = event.nativeEvent.text.toLowerCase();
-
-    this.clearTimeout(this.timeoutID);
-    this.timeoutID = this.setTimeout(() => this.searchPhotos(filter), 100);
-  },
-  renderFooter: function() {
-    if (!this.hasMore() || !this.state.isLoadingTail) {
-      return <View style={styles.scrollSpinner} />;
-    }
-    if (Platform.OS === 'ios') {
-      return <ActivityIndicatorIOS style={styles.scrollSpinner} />;
-    } else {
-      return (
-        <View  style={{alignItems: 'center'}}>
-          <ProgressBarAndroid styleAttr="Large"/>
-        </View>
-      );
-    }
-  },
   renderSeparator: function(
     sectionID: number | string,
     rowID: number | string,
@@ -246,7 +223,6 @@ var SearchFlicker = React.createClass({
       <View key={'SEP_' + sectionID + '_' + rowID}  style={style}/>
     );
   },
-
   renderRow: function(
     photo: Object,
     sectionID: number | string,
@@ -263,32 +239,61 @@ var SearchFlicker = React.createClass({
     );
   },
   render: function() {
-    var content = 
+    var content = this.state.dataSource.getRowCount() === 0 ?
+      <NoPhotos
+        filter={this.state.filter}
+        isLoading={this.state.isLoading}/> 
+        :
       <ListView
-        ref="listview"
-        renderSeparator={this.renderSeparator}
+        ref="listView"
+        renderSeperator={this.renderSeperator}
+        contentContainerStyle={styles.list}
         dataSource={this.state.dataSource}
-        renderFooter={this.renderFooter}
         renderRow={this.renderRow}
-        
-        onEndReached={this.onEndReached}
-        automaticallyAdjustContentInsets={false}
+        automaticallyAdjustContentsInsets={false}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps={true}
         showsVerticalScrollIndicator={false}/>;
-          //contentContainerStyle={styles.list}
     return (
       <View style={styles.container}>
         <SearchBar
           onSearchChange={this.onSearchChange}
           isLoading={this.state.isLoading}
           onFocus={() =>
-            this.refs.listview && this.refs.listview.getScrollResponder().scrollTo(0, 0)} />
+            this.refs.listview && this.refs.listview.getScrollResponder().scrollTo({ x: 0, y: 0 })}/>
         <View style={styles.separator} />
         {content}
       </View>
     );
   },
+
+  renderLoadingView: function() {
+    return (
+      <View style={styles.container}>
+        <Text>
+          Loading photos...
+        </Text>
+      </View>
+    );
+  },
+  
+});
+
+var NoPhotos = React.createClass({
+  render: function() {
+    var text = '';
+    if (this.props.filter) {
+      text = `No results for "${this.props.filter}"`;
+    } else if (!this.props.isLoading) {
+      text = 'No photos found';
+    }
+
+    return (
+      <View style={[styles.container, styles.centerText]}>
+        <Text style={styles.noPhotosText}>{text}</Text>
+      </View>
+    );
+  }
 });
 
 var styles = StyleSheet.create({
@@ -302,6 +307,10 @@ var styles = StyleSheet.create({
   },
   centerText: {
     alignItems: 'center',
+  },
+  noPhotosText: {
+    marginTop: 80,
+    color: '#888888',
   },
   separator: {
     height: 1,
@@ -321,4 +330,3 @@ var styles = StyleSheet.create({
 });
 
 module.exports = SearchFlicker;
-
