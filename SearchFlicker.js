@@ -28,6 +28,7 @@ var API_URL =
 
 var LOADING = {};
 
+// Results chase used instead of database to quickly retrieve the result of a query that has already been done
 var resultsCache = {
   dataForQuery: {},
   nextPageNumberForQuery: {},
@@ -39,6 +40,8 @@ var SearchFlicker = React.createClass({
 
   timeoutID: (null: any),
 
+  // Executes exactly once during the lifecycle of this component to initialize the state
+  // of the component
   getInitialState: function() {
     return {
       isLoading: false,
@@ -52,9 +55,13 @@ var SearchFlicker = React.createClass({
     };
   },
 
+  // Method called automaticallt by React after a component is rendered for the 
+  // first time. Call fetchData on nothing at first because the user hasn't searched
+  // anything yet 
   componentDidMount: function() {
     this.fetchData('');
   },
+  // Generate the url for the query 
   _urlForQueryAndPage: function(query: string, pageNumber: number): string {
     var apiKey = API_KEY;
     if (query) {
@@ -65,11 +72,14 @@ var SearchFlicker = React.createClass({
       );
     } 
   },
+  // Handles the HTTP GET request for the search result data
   fetchData: function(query: string) {
     this.timeoutID = null;
 
     this.setState({filter: query});
 
+    // First check if we have cached this query before.
+    // If so set the dataSource to the result of the cached result
     var cachedResultsForQuery = resultsCache.dataForQuery[query];
     if (cachedResultsForQuery) {
       if (!LOADING[query]) {
@@ -82,6 +92,7 @@ var SearchFlicker = React.createClass({
       }
       return;
     }
+    // If not cached, run the query
     LOADING[query] = true;
     resultsCache.dataForQuery[query] = null;
     this.setState({
@@ -89,7 +100,7 @@ var SearchFlicker = React.createClass({
       queryNumber: this.state.queryNumber + 1,
       isLoadingTail: false,
     });
-
+    // Parse the GET request as a json and extract the list of photos and titles from the request.
     fetch(this._urlForQueryAndPage(query, 1), {method: "GET"})
       .then((response) => response.json())
       .then((responseData) => {
@@ -102,7 +113,7 @@ var SearchFlicker = React.createClass({
           // do not update state if the query is stale
           return;
         }
-
+        // Set the datasource to the photos.photo list
         this.setState({
           isLoading: false,
           dataSource: this.state.dataSource.cloneWithRows(responseData.photos.photo),
@@ -119,6 +130,8 @@ var SearchFlicker = React.createClass({
       })
       .done();
   },
+  // check to see if there are more photos from the query.
+  // Used to know whether we need to refresh and show more pictures as we scroll. 
   hasMore: function(): boolean {
     var query = this.state.filter;
     if (!resultsCache.dataForQuery[query]) {
@@ -130,10 +143,12 @@ var SearchFlicker = React.createClass({
     );
   },
 
+  //Checks whether if the end of the results is reached.
+  // If not, fetch the next page of results
   onEndReached: function() {
     var query = this.state.filter;
     if (!this.hasMore() || this.state.isLoadingTail) {
-      // We're already fetching or have all the elements so noop
+      // No more elements in search results
       return;
     }
 
@@ -165,7 +180,7 @@ var SearchFlicker = React.createClass({
         // We reached the end of the list before the expected number of results
         if (!responseData.photos.photo) {
           resultsCache.totalForQuery[query] = photosForQuery.length;
-        } else {
+        }else {
           for (var i in responseData.photos) {
             photosForQuery.push(responseData.photos[i]);
           }
@@ -185,15 +200,18 @@ var SearchFlicker = React.createClass({
       })
       .done();
   },
+  // Return the data source Array as a ListView element
   getDataSource: function(photos: Array<any>): ListView.DataSource {
     return this.state.dataSource.cloneWithRows(photos);
   },
+  // Run this function whenever the value inputted into the search bar has changed
   onSearchChange: function(event: Object){
     var filter = event.nativeEvent.text.toLowerCase();
 
     this.clearTimeout(this.timeoutID);
     this.timeoutID = this.setTimeout(() => this.fetchData(filter), 100);
   },
+  // Once you click on a photo in the grid view, switch to the PhotoScreen component
   selectPhoto: function(photo: Object) {
     if (Platform.OS === 'ios') {
       this.props.navigator.push({
@@ -201,7 +219,7 @@ var SearchFlicker = React.createClass({
         component: PhotoScreen,
         passProps: {photo},
       });
-    } else {
+    }else {
       dismissKeyboard();
       this.props.navigator.push({
         title: photo.title,
@@ -213,16 +231,16 @@ var SearchFlicker = React.createClass({
   renderSeparator: function(
     sectionID: number | string,
     rowID: number | string,
-    adjacentRowHighlighted: boolean
-  ) {
-    var style = styles.rowSeparator;
-    if (adjacentRowHighlighted) {
-        style = [style, styles.rowSeparatorHide];
-    }
-    return (
-      <View key={'SEP_' + sectionID + '_' + rowID}  style={style}/>
-    );
+    adjacentRowHighlighted: boolean){
+      var style = styles.rowSeparator;
+      if (adjacentRowHighlighted) {
+          style = [style, styles.rowSeparatorHide];
+      }
+      return (
+        <View key={'SEP_' + sectionID + '_' + rowID}  style={style}/>
+      );
   },
+  //Render the row of photo elements
   renderRow: function(
     photo: Object,
     sectionID: number | string,
@@ -238,6 +256,9 @@ var SearchFlicker = React.createClass({
         photo={photo}/>
     );
   },
+  // Render the component depending on how many rows are in the datasource
+  // If empty, render the NoPhotos component
+  // Else, render a ListView with photos in a grid
   render: function() {
     var content = this.state.dataSource.getRowCount() === 0 ?
       <NoPhotos
@@ -266,7 +287,7 @@ var SearchFlicker = React.createClass({
       </View>
     );
   },
-
+  // Render a placeholder text to show the query is loading
   renderLoadingView: function() {
     return (
       <View style={styles.container}>
@@ -279,6 +300,7 @@ var SearchFlicker = React.createClass({
   
 });
 
+// Component to exist when the search query has no photos or no query has been made yet
 var NoPhotos = React.createClass({
   render: function() {
     var text = '';

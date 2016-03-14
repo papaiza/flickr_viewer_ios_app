@@ -13,6 +13,11 @@ var {
 
 var getImageSource = require('./getImageSource');
 
+/*
+    Create touchable elements that display the image in a grid view. 
+    When the image is pressed, the app is directed to the PhotoScreen page,
+    which displays the image larger and includes the title. 
+*/
 var PhotoCell = React.createClass({
   render: function() {
     var title = this.props.photo.title;

@@ -7,6 +7,10 @@ var {
   StyleSheet,
   View,
 } = React;
+
+/*
+    Component which creates a search bar that refreshes the result list upon each change.
+*/
 var SearchBar = React.createClass({
   render: function() {
     return (

@@ -9,6 +9,9 @@ var {
 
 var SearchFlicker = require('./SearchFlicker');
 
+/*
+    Render the SearchFlicker component within a NavigatorIOS component
+*/
 var PhotosApp = React.createClass({
   render: function() {
     return (
